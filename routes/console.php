@@ -9,6 +9,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('aqi:check')
-    ->hourly()
+    ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
