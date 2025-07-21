@@ -118,11 +118,6 @@ class WhatsAppSessionManager extends Component
     {
         $this->statusMessage = $message;
         $this->statusType = $type;
-
-        // Auto-clear success messages after 5 seconds
-        if ($type === 'success') {
-            $this->dispatch('clear-status');
-        }
     }
 
     #[On('clear-status')]

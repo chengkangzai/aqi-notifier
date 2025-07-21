@@ -106,10 +106,7 @@ class AqiDashboard extends Component
     protected function setStatus(string $message, string $type = 'info')
     {
         $this->statusMessage = $message;
-        $this->statusType = $type;
-
-        // Auto-clear messages after 5 seconds
-        $this->dispatch('clear-status');
+        $this->statusType = $type;;
     }
 
     #[On('clear-status')]
