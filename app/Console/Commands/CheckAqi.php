@@ -42,7 +42,7 @@ class CheckAqi extends Command
         
         try {
             // Always use stored recipients from settings (no manual override)
-            $result = $this->notifierService->checkAndNotify($city, null);
+            $result = $this->notifierService->checkAndNotify($city, null, $this->option('force'));
             
             if (!$result['success']) {
                 $this->error('❌ AQI check failed: ' . $result['message']);

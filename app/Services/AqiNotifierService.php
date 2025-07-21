@@ -24,7 +24,7 @@ class AqiNotifierService
     /**
      * Check AQI and send notifications if needed
      */
-    public function checkAndNotify(string $city = null, array $recipients = null): array
+    public function checkAndNotify(string $city = null, array $recipients = null, bool $force = false): array
     {
         Log::info('Starting AQI check and notification process');
         
@@ -44,7 +44,7 @@ class AqiNotifierService
         $reading = $this->storeAqiReading($aqiData);
         
         // Check if notifications should be sent
-        $shouldNotify = $this->shouldSendNotification($aqiData);
+        $shouldNotify = $force || $this->shouldSendNotification($aqiData);
         
         if (!$shouldNotify) {
             Log::info('No notification needed based on current AQI level and settings', [
@@ -131,8 +131,8 @@ class AqiNotifierService
             return false;
         }
 
-        // Check if AQI level requires notification
-        if (!$this->aqiService->shouldNotify($aqiData['aqi'])) {
+        // Check if AQI level requires notification (using stored settings, not config defaults)
+        if (!$this->shouldNotifyForLevel($aqiData['level'])) {
             return false;
         }
 
@@ -146,6 +146,15 @@ class AqiNotifierService
         }
 
         return true;
+    }
+
+    /**
+     * Check if notifications should be sent for this AQI level (using stored settings)
+     */
+    protected function shouldNotifyForLevel(string $level): bool
+    {
+        $thresholds = $this->getSetting('thresholds', config('aqi.thresholds'));
+        return $thresholds[$level]['notify'] ?? false;
     }
 
     /**
