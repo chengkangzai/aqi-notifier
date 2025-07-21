@@ -42,6 +42,11 @@ class CheckAqi extends Command
         $city = $this->option('city');
         $recipients = $this->option('recipients');
         
+        // Convert empty recipients array to null so fallback works
+        if (empty($recipients)) {
+            $recipients = null;
+        }
+        
         try {
             $result = $this->notifierService->checkAndNotify($city, $recipients);
             
