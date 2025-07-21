@@ -45,6 +45,13 @@ vendor/bin/pest  # Direct Pest execution
 ./vendor/bin/pint    # Laravel Pint code formatting
 ```
 
+### AQI Monitoring Commands
+```bash
+php artisan aqi:check                    # Check AQI with default settings
+php artisan aqi:check --city=singapore   # Check specific city
+php artisan aqi:check --force            # Force notification regardless of thresholds
+```
+
 ## Project Structure Notes
 
 - **Livewire Components**: Located in `app/Livewire/` with corresponding views in `resources/views/livewire/`
@@ -52,6 +59,25 @@ vendor/bin/pest  # Direct Pest execution
 - **Authentication**: Full auth system with email verification, password reset, and profile management
 - **Database**: Uses SQLite with migrations in `database/migrations/`
 - **Configuration**: Standard Laravel config files in `config/`
+
+## Core Application Architecture
+
+### Models and Database
+- **User**: Standard Laravel user with email verification
+- **AqiReading**: Historical AQI data storage
+- **AqiSetting**: Configuration storage with JSON values for thresholds and settings
+- **NotificationLog**: Tracks sent notifications to prevent spam
+
+### Services Layer
+- **AqiService** (`app/Services/AqiService.php`): WAQI API integration and data processing
+- **AqiNotifierService** (`app/Services/AqiNotifierService.php`): Notification logic and threshold management
+- **WhatsAppNotificationService** (`app/Services/WhatsAppNotificationService.php`): WhatsApp integration via WAHA SDK
+
+### Commands
+- **CheckAqi** (`app/Console/Commands/CheckAqi.php`): CLI command for AQI monitoring, supports city selection and forced notifications
+
+### Configuration
+- **Custom AQI Config** (`config/aqi.php`): AQI thresholds, notification templates, and WAQI API settings
 
 ## Testing Structure
 
