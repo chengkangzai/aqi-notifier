@@ -14,7 +14,6 @@ class CheckAqi extends Command
      */
     protected $signature = 'aqi:check 
                             {--city= : City to check (defaults to Kuala Lumpur)}
-                            {--recipients=* : Override default recipients}
                             {--force : Force notification regardless of thresholds}';
 
     /**
@@ -40,15 +39,10 @@ class CheckAqi extends Command
         $this->info('🌬️ Starting AQI check...');
         
         $city = $this->option('city');
-        $recipients = $this->option('recipients');
-        
-        // Convert empty recipients array to null so fallback works
-        if (empty($recipients)) {
-            $recipients = null;
-        }
         
         try {
-            $result = $this->notifierService->checkAndNotify($city, $recipients);
+            // Always use stored recipients from settings (no manual override)
+            $result = $this->notifierService->checkAndNotify($city, null);
             
             if (!$result['success']) {
                 $this->error('❌ AQI check failed: ' . $result['message']);
