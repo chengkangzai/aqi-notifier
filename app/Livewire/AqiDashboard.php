@@ -43,13 +43,13 @@ class AqiDashboard extends Component
     {
         // Get current AQI data
         $this->currentAqi = $this->aqiService->getAqiData();
-        
+
         // Get statistics
         $this->statistics = $this->notifierService->getAqiStatistics(7);
-        
+
         // Get recent notifications
         $this->recentNotifications = $this->notifierService->getRecentNotifications(10);
-        
+
         // Get WhatsApp session status
         $this->sessionInfo = $this->whatsAppService->getSessionInfo();
     }
@@ -63,7 +63,7 @@ class AqiDashboard extends Component
     public function manualAqiCheck()
     {
         $result = $this->notifierService->checkAndNotify();
-        
+
         if ($result['success']) {
             $notificationsSent = count($result['notifications_sent'] ?? []);
             if ($notificationsSent > 0) {
@@ -74,14 +74,14 @@ class AqiDashboard extends Component
         } else {
             $this->setStatus('Manual AQI check failed: ' . $result['message'], 'error');
         }
-        
+
         $this->loadData();
     }
 
     public function getAqiLevelColor(?string $level): string
     {
         if (!$level) return 'gray';
-        
+
         $config = $this->aqiService->getAqiLevelConfig($level);
         return $config['color'] ?? 'gray';
     }
@@ -89,7 +89,7 @@ class AqiDashboard extends Component
     public function getAqiLevelText(?string $level): string
     {
         if (!$level) return 'Unknown';
-        
+
         return ucfirst(str_replace('_', ' ', $level));
     }
 
@@ -107,9 +107,9 @@ class AqiDashboard extends Component
     {
         $this->statusMessage = $message;
         $this->statusType = $type;
-        
+
         // Auto-clear messages after 5 seconds
-        $this->dispatch('clear-status')->delay(5000);
+        $this->dispatch('clear-status');
     }
 
     #[On('clear-status')]
