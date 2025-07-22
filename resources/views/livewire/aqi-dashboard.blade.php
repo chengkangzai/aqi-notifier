@@ -31,7 +31,7 @@
                                 {{ $this->getAqiLevelText($currentAqi['level']) }}
                             </span>
                         </div>
-                        
+
                         {{-- Weather Info --}}
                         @if(!empty($currentAqi['weather']))
                             <div class="grid grid-cols-2 gap-4 mt-6">
@@ -41,7 +41,7 @@
                                         <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ $currentAqi['weather']['temperature'] }}°C</p>
                                     </div>
                                 @endif
-                                
+
                                 @if(isset($currentAqi['weather']['humidity']))
                                     <div class="text-center">
                                         <p class="text-sm text-gray-500 dark:text-gray-400">Humidity</p>
@@ -50,7 +50,7 @@
                                 @endif
                             </div>
                         @endif
-                        
+
                         @if(isset($currentAqi['time']))
                             <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
                                 Last updated: {{ $currentAqi['time']->format('Y-m-d H:i:s') }}
@@ -70,15 +70,15 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h3 class="text-md font-semibold text-gray-900 dark:text-gray-100">Quick Actions</h3>
                 <div class="mt-4 space-y-3">
-                    <flux:button 
+                    <flux:button
                         wire:click="refreshData"
                         variant="primary"
                         class="w-full"
                     >
                         Refresh Data
                     </flux:button>
-                    
-                    <flux:button 
+
+                    <flux:button
                         wire:click="manualAqiCheck"
                         variant="filled"
                         class="w-full"
@@ -114,21 +114,21 @@
                 {{ $statistics['average_aqi'] ?? 'N/A' }}
             </div>
         </div>
-        
+
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
             <p class="text-sm text-gray-500 dark:text-gray-400">7-Day Max</p>
             <div class="text-2xl font-bold mt-1 text-red-600">
                 {{ $statistics['max_aqi'] ?? 'N/A' }}
             </div>
         </div>
-        
+
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
             <p class="text-sm text-gray-500 dark:text-gray-400">7-Day Min</p>
             <div class="text-2xl font-bold mt-1 text-green-600">
                 {{ $statistics['min_aqi'] ?? 'N/A' }}
             </div>
         </div>
-        
+
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 text-center">
             <p class="text-sm text-gray-500 dark:text-gray-400">Total Readings</p>
             <div class="text-2xl font-bold mt-1 text-gray-900 dark:text-gray-100">
@@ -156,11 +156,11 @@
                             <div>
                                 <p class="font-medium text-gray-900 dark:text-gray-100">AQI {{ $notification['aqi_value'] }}</p>
                                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    to {{ substr($notification['recipient'], 0, 5) }}...
+                                    to {{ $notification['recipient'] }}...
                                 </p>
                             </div>
                         </div>
-                        
+
                         <div class="text-right">
                             <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full {{
                                 $notification['status'] === 'sent' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
@@ -190,7 +190,7 @@
                     </div>
                 @endforeach
             </div>
-            
+
             @if($currentAqi['dominant_pollutant'])
                 <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                     <p class="text-sm text-yellow-800 dark:text-yellow-200">
