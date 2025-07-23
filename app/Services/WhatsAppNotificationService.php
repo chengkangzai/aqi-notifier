@@ -192,12 +192,41 @@ class WhatsAppNotificationService
         $maxAttempts = config('aqi.notifications.retry_attempts', 3);
         $baseDelay = config('aqi.notifications.retry_delay', 5);
         $useExponentialBackoff = config('aqi.notifications.retry_exponential_backoff', true);
+        $autoRestart = config('aqi.notifications.auto_restart_session', true);
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             $result = $this->attemptSendMessage($recipient, $message, $attempt);
             
             if ($result['success']) {
                 return $result;
+            }
+
+            // Check if this is a session status error and we should restart
+            if ($autoRestart && $this->isSessionStatusError($result)) {
+                Log::info("Detected session status error, attempting to restart session", [
+                    'recipient' => $this->formatRecipientId($recipient),
+                    'attempt' => $attempt,
+                    'error' => $result['error'] ?? 'Unknown error'
+                ]);
+
+                $restartResult = $this->handleSessionRestart();
+                
+                if ($restartResult['success']) {
+                    // Give the session time to fully restart before retrying
+                    $restartDelay = config('aqi.notifications.session_restart_delay', 10);
+                    Log::info("Session restarted successfully, waiting {$restartDelay}s before retry");
+                    sleep($restartDelay);
+                    
+                    // Retry immediately after restart
+                    $retryResult = $this->attemptSendMessage($recipient, $message, $attempt);
+                    if ($retryResult['success']) {
+                        return $retryResult;
+                    }
+                } else {
+                    Log::warning("Failed to restart session", [
+                        'restart_error' => $restartResult['message'] ?? 'Unknown restart error'
+                    ]);
+                }
             }
 
             // Don't sleep after the last attempt
@@ -380,5 +409,81 @@ class WhatsAppNotificationService
             'stop_result' => $stopResult,
             'start_result' => $startResult
         ];
+    }
+
+    /**
+     * Check if the error is related to session status
+     */
+    protected function isSessionStatusError(array $result): bool
+    {
+        $error = $result['error'] ?? '';
+        $httpStatus = $result['http_status'] ?? null;
+
+        // HTTP 422 typically indicates session status issues
+        if ($httpStatus === 422) {
+            return true;
+        }
+
+        // Check for specific error messages related to session status
+        $sessionErrorPatterns = [
+            'Session status is not as expected',
+            'status is not as expected',
+            'Try again later or restart the session',
+            'session is not ready',
+            'session not found',
+            'STARTING',
+            'SCAN_QR_CODE',
+            'FAILED'
+        ];
+
+        foreach ($sessionErrorPatterns as $pattern) {
+            if (stripos($error, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Handle session restart with proper error handling
+     */
+    protected function handleSessionRestart(): array
+    {
+        try {
+            Log::info("Attempting to restart WhatsApp session due to status error", [
+                'session' => $this->sessionName
+            ]);
+
+            $restartResult = $this->restartSession();
+
+            if ($restartResult['success']) {
+                Log::info("WhatsApp session restarted successfully", [
+                    'session' => $this->sessionName
+                ]);
+                return [
+                    'success' => true,
+                    'message' => 'Session restarted successfully'
+                ];
+            } else {
+                Log::error("Failed to restart WhatsApp session", [
+                    'session' => $this->sessionName,
+                    'restart_result' => $restartResult
+                ]);
+                return [
+                    'success' => false,
+                    'message' => $restartResult['message'] ?? 'Unknown restart error'
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error("Exception occurred during session restart", [
+                'session' => $this->sessionName,
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'success' => false,
+                'message' => 'Exception during restart: ' . $e->getMessage()
+            ];
+        }
     }
 }
