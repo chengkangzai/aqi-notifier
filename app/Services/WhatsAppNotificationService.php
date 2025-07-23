@@ -185,18 +185,68 @@ class WhatsAppNotificationService
     }
 
     /**
-     * Send text message to WhatsApp number
+     * Send text message to WhatsApp number with retry logic
      */
     public function sendMessage(string $recipient, string $message): array
+    {
+        $maxAttempts = config('aqi.notifications.retry_attempts', 3);
+        $baseDelay = config('aqi.notifications.retry_delay', 5);
+        $useExponentialBackoff = config('aqi.notifications.retry_exponential_backoff', true);
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $result = $this->attemptSendMessage($recipient, $message, $attempt);
+            
+            if ($result['success']) {
+                return $result;
+            }
+
+            // Don't sleep after the last attempt
+            if ($attempt < $maxAttempts) {
+                $delay = $useExponentialBackoff 
+                    ? $baseDelay * pow(2, $attempt - 1) 
+                    : $baseDelay;
+                
+                Log::info("WhatsApp message failed, retrying in {$delay} seconds", [
+                    'recipient' => $this->formatRecipientId($recipient),
+                    'attempt' => $attempt,
+                    'max_attempts' => $maxAttempts,
+                    'delay' => $delay,
+                    'error' => $result['error'] ?? 'Unknown error'
+                ]);
+
+                sleep($delay);
+            }
+        }
+
+        // All attempts failed
+        Log::error("WhatsApp message failed after all retry attempts", [
+            'recipient' => $this->formatRecipientId($recipient),
+            'total_attempts' => $maxAttempts,
+            'final_error' => $result['error'] ?? 'Unknown error'
+        ]);
+
+        return [
+            'success' => false,
+            'error' => $result['error'] ?? 'All retry attempts failed',
+            'attempts' => $maxAttempts,
+            'http_status' => $result['http_status'] ?? null
+        ];
+    }
+
+    /**
+     * Attempt to send a single WhatsApp message
+     */
+    protected function attemptSendMessage(string $recipient, string $message, int $attempt): array
     {
         try {
             // Ensure recipient is in correct format
             $chatId = $this->formatRecipientId($recipient);
 
-            Log::info("Sending WhatsApp message", [
+            Log::info("Attempting to send WhatsApp message", [
                 'recipient' => $chatId,
                 'session' => $this->sessionName,
-                'message_length' => strlen($message)
+                'message_length' => strlen($message),
+                'attempt' => $attempt
             ]);
 
             $response = $this->waha->sendText()->sendTextMessage(
@@ -213,37 +263,43 @@ class WhatsAppNotificationService
 
                 Log::info("WhatsApp message sent successfully", [
                     'recipient' => $chatId,
-                    'message_id' => $data['id'] ?? 'unknown'
+                    'message_id' => $data['id'] ?? 'unknown',
+                    'attempt' => $attempt
                 ]);
 
                 return [
                     'success' => true,
                     'message_id' => $data['id'] ?? null,
-                    'data' => $data
+                    'data' => $data,
+                    'attempt' => $attempt
                 ];
             }
 
-            Log::error("Failed to send WhatsApp message", [
+            Log::warning("WhatsApp message attempt failed", [
                 'recipient' => $chatId,
                 'status' => $response->status(),
-                'body' => $response->body()
+                'body' => $response->body(),
+                'attempt' => $attempt
             ]);
 
             return [
                 'success' => false,
                 'error' => $response->body(),
-                'http_status' => $response->status()
+                'http_status' => $response->status(),
+                'attempt' => $attempt
             ];
 
         } catch (RequestException $e) {
-            Log::error('Exception while sending WhatsApp message', [
+            Log::warning('Exception during WhatsApp message attempt', [
                 'recipient' => $recipient,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'attempt' => $attempt
             ]);
 
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'attempt' => $attempt
             ];
         }
     }
