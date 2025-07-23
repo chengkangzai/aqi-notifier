@@ -189,10 +189,10 @@ class WhatsAppNotificationService
      */
     public function sendMessage(string $recipient, string $message): array
     {
-        $maxAttempts = config('aqi.notifications.retry_attempts', 3);
-        $baseDelay = config('aqi.notifications.retry_delay', 5);
-        $useExponentialBackoff = config('aqi.notifications.retry_exponential_backoff', true);
-        $autoRestart = config('aqi.notifications.auto_restart_session', true);
+        $maxAttempts = 3; // Hardcoded retry attempts
+        $baseDelay = 5; // Hardcoded initial delay in seconds
+        $useExponentialBackoff = true; // Hardcoded exponential backoff
+        $autoRestart = true; // Hardcoded auto restart session
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             $result = $this->attemptSendMessage($recipient, $message, $attempt);
@@ -213,7 +213,7 @@ class WhatsAppNotificationService
                 
                 if ($restartResult['success']) {
                     // Give the session time to fully restart before retrying
-                    $restartDelay = config('aqi.notifications.session_restart_delay', 10);
+                    $restartDelay = 10; // Hardcoded session restart delay in seconds
                     Log::info("Session restarted successfully, waiting {$restartDelay}s before retry");
                     sleep($restartDelay);
                     

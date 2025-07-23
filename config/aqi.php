@@ -82,11 +82,6 @@ return [
         'default_recipient' => env('AQI_DEFAULT_RECIPIENT'),
         'session_name' => env('WAHA_SESSION_NAME', 'default'),
         'timeout' => 60, // WhatsApp API timeout in seconds
-        'retry_attempts' => 3, // Number of retry attempts for failed messages
-        'retry_delay' => 5, // Initial delay between retries in seconds
-        'retry_exponential_backoff' => true, // Use exponential backoff for retries
-        'auto_restart_session' => true, // Automatically restart session on status errors
-        'session_restart_delay' => 10, // Delay before attempting to restart session (seconds)
         'rate_limit_minutes' => 60, // Don't send same level alert more than once per hour
         'quiet_hours' => [
             'enabled' => false,
