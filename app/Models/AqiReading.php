@@ -77,6 +77,14 @@ class AqiReading extends Model
     }
 
     /**
+     * Get AQI value as 'aqi' attribute for consistency
+     */
+    public function getAqiAttribute(): ?int
+    {
+        return $this->aqi_value;
+    }
+
+    /**
      * Get AQI level for this reading
      */
     public function getAqiLevelAttribute(): string
